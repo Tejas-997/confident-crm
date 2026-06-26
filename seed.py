@@ -61,6 +61,9 @@ async def geocode_all(items):
     return await asyncio.gather(*(geocode_location(loc) for *_, loc, _s, _a in items))
 
 
+if Lead.objects.count() >= len(SAMPLE):
+    print(f"\nLeads already present ({Lead.objects.count()}); skipping seed.")
+    raise SystemExit(0)
 geos = asyncio.run(geocode_all(SAMPLE))
 created = 0
 for (name, phone, prop, config, bmin, bmax, loc, status, agent), geo in zip(SAMPLE, geos):

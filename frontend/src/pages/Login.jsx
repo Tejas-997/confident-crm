@@ -100,12 +100,7 @@ export default function Login() {
           </form>
 
           <div className="mt-6 rounded-lg border border-slate-200 bg-white p-3 text-xs text-slate-500">
-            <div className="mb-1.5 font-medium text-slate-600">Demo accounts</div>
-            <div className="grid grid-cols-1 gap-1">
-              <div><span className="font-medium text-slate-600">rohit.manager</span> / manager123 — Sales Manager (sees all)</div>
-              <div><span className="font-medium text-slate-600">aisha.agent</span> / agent123 — Sales Agent (own leads)</div>
-              <div><span className="font-medium text-slate-600">admin</span> / admin12345 — Admin</div>
-            </div>
+            
           </div>
         </div>
       </div>
