@@ -22,4 +22,6 @@ COPY --from=frontend /app/frontend/dist ./frontend/dist
 RUN python manage.py collectstatic --noinput
 
 EXPOSE 8000
-CMD gunicorn api.main:app -k uvicorn.workers.UvicornWorker -b 0.0.0.0:${PORT:-8000} --workers 2
+# Entrypoint runs migrations + seed, then starts the server (free-tier safe).
+RUN chmod +x start.sh
+CMD ["sh", "start.sh"]
