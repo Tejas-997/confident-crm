@@ -1,10 +1,9 @@
 services:
   - type: web
-    name: lead-crm
+    name: confident-crm
     runtime: docker
     dockerfilePath: ./Dockerfile
     plan: free
-    preDeployCommand: "python manage.py migrate"
     envVars:
       - key: SECRET_KEY
         generateValue: true
@@ -14,12 +13,9 @@ services:
         value: ".onrender.com"
       - key: DATABASE_URL
         fromDatabase:
-          name: lead-crm-db
+          name: confident-crm-db
           property: connectionString
-      # After first deploy, set CSRF_TRUSTED_ORIGINS to your real URL so the
-      # Django admin accepts logins, e.g. https://lead-crm-xxxx.onrender.com
-      # Optional: GITHUB_TOKEN to lift the enrichment rate limit.
 
 databases:
-  - name: lead-crm-db
+  - name: confident-crm-db
     plan: free
