@@ -1,6 +1,8 @@
 import { useState } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
 import { useAuth } from '../auth.jsx'
+import { log } from '../logger.js'
+import { toast } from '../toast.js'
 
 export default function Login() {
   const { login } = useAuth()
@@ -19,9 +21,12 @@ export default function Login() {
     setBusy(true)
     try {
       await login(username, password)
+      log.success('Signed in', username)
+      toast(`Welcome back, ${username}`)
       navigate(from, { replace: true })
     } catch (err) {
-      setError(err.message || 'Sign in failed')
+      const msg = err.message || 'Sign in failed'
+      setError(msg); log.error('Sign in failed', err); toast(msg, 'error')
     } finally {
       setBusy(false)
     }
@@ -30,7 +35,7 @@ export default function Login() {
   return (
     <div className="grid min-h-screen lg:grid-cols-2">
       {/* Brand panel */}
-      <div className="relative hidden flex-col justify-between bg-navy-900 p-12 lg:flex">
+      <div className="animate-fade relative hidden flex-col justify-between bg-navy-900 p-12 lg:flex">
         <div className="font-display text-xl font-bold tracking-tight text-white">
           Confident<span className="text-emerald-400"> CRM</span>
         </div>
@@ -55,7 +60,7 @@ export default function Login() {
 
       {/* Form panel */}
       <div className="flex items-center justify-center bg-canvas px-6 py-12">
-        <div className="w-full max-w-sm">
+        <div className="animate-rise w-full max-w-sm">
           <div className="mb-8 lg:hidden">
             <div className="font-display text-xl font-bold text-ink">Confident<span className="text-emerald-500"> CRM</span></div>
           </div>
@@ -70,7 +75,7 @@ export default function Login() {
                 value={username}
                 onChange={(e) => setUsername(e.target.value)}
                 className="mt-1.5 w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm outline-none focus:border-navy-700 focus:ring-2 focus:ring-navy-700/10"
-                placeholder="admin"
+                placeholder="rohit.manager"
               />
             </div>
             <div>
@@ -85,7 +90,7 @@ export default function Login() {
             </div>
 
             {error && (
-              <div className="rounded-lg bg-rose-50 px-3 py-2 text-sm text-rose-700 ring-1 ring-inset ring-rose-200">
+              <div className="animate-fade rounded-lg bg-rose-50 px-3 py-2 text-sm text-rose-700 ring-1 ring-inset ring-rose-200">
                 {error}
               </div>
             )}
@@ -100,7 +105,21 @@ export default function Login() {
           </form>
 
           <div className="mt-6 rounded-lg border border-slate-200 bg-white p-3 text-xs text-slate-500">
-            
+            <div className="mb-1.5 font-medium text-slate-600">Demo accounts</div>
+            <div className="grid grid-cols-1 gap-1">
+              <button type="button" onClick={() => { setUsername('rohit.manager'); setPassword('manager123') }}
+                className="text-left hover:text-navy-700">
+                <span className="font-medium text-slate-600">rohit.manager</span> / manager123 — Sales Manager (sees all)
+              </button>
+              <button type="button" onClick={() => { setUsername('aisha.agent'); setPassword('agent123') }}
+                className="text-left hover:text-navy-700">
+                <span className="font-medium text-slate-600">aisha.agent</span> / agent123 — Sales Agent (own leads)
+              </button>
+              <button type="button" onClick={() => { setUsername('admin'); setPassword('admin12345') }}
+                className="text-left hover:text-navy-700">
+                <span className="font-medium text-slate-600">admin</span> / admin12345 — Admin
+              </button>
+            </div>
           </div>
         </div>
       </div>

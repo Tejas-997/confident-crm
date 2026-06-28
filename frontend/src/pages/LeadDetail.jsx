@@ -2,6 +2,8 @@ import { useEffect, useState, useCallback } from 'react'
 import { useParams, Link, useNavigate } from 'react-router-dom'
 import { api } from '../api.js'
 import { useAuth } from '../auth.jsx'
+import { log } from '../logger.js'
+import { toast } from '../toast.js'
 import { STATUSES, metaFor, propertyLabel, budgetLabel } from '../status.js'
 import StatusBadge from '../components/StatusBadge.jsx'
 import LeadMap from '../components/LeadMap.jsx'
@@ -32,8 +34,8 @@ export default function LeadDetail() {
   const load = useCallback(async () => {
     try {
       const [l, n] = await Promise.all([api.lead(id), api.notes(id)])
-      setLead(l); setNotes(n)
-    } catch (e) { setError(e.message) }
+      setLead(l); setNotes(n); log.success('Lead loaded', l)
+    } catch (e) { setError(e.message); log.error('Load lead failed', e) }
   }, [id])
 
   useEffect(() => { load() }, [load])
@@ -42,14 +44,14 @@ export default function LeadDetail() {
   const changeStatus = async (status) => {
     if (status === lead.status) return
     setSavingStatus(true)
-    try { setLead(await api.setStatus(id, status)) }
-    catch (e) { setError(e.message) } finally { setSavingStatus(false) }
+    try { setLead(await api.setStatus(id, status)); log.success('Status updated', status); toast('Status updated successfully') }
+    catch (e) { log.error('Status update failed', e); toast(e.message, 'error') } finally { setSavingStatus(false) }
   }
 
   const changeAssignee = async (e) => {
     const val = e.target.value
-    try { setLead(await api.assign(id, val ? Number(val) : null)) }
-    catch (err) { setError(err.message) }
+    try { setLead(await api.assign(id, val ? Number(val) : null)); log.success('Lead reassigned', val); toast('Lead reassigned successfully') }
+    catch (err) { log.error('Reassign failed', err); toast(err.message, 'error') }
   }
 
   const addNote = async (e) => {
@@ -58,17 +60,17 @@ export default function LeadDetail() {
     setAddingNote(true)
     try {
       const note = await api.addNote(id, noteBody.trim())
-      setNotes([note, ...notes]); setNoteBody('')
-    } catch (e) { setError(e.message) } finally { setAddingNote(false) }
+      setNotes([note, ...notes]); setNoteBody(''); log.success('Note added'); toast('Note added successfully')
+    } catch (e) { log.error('Add note failed', e); toast(e.message, 'error') } finally { setAddingNote(false) }
   }
 
   const remove = async () => {
     if (!confirm('Delete this lead? This cannot be undone.')) return
-    try { await api.deleteLead(id); navigate('/leads', { replace: true }) }
-    catch (e) { setError(e.message) }
+    try { await api.deleteLead(id); log.success('Lead deleted', id); toast('Lead deleted'); navigate('/leads', { replace: true }) }
+    catch (e) { log.error('Delete failed', e); toast(e.message, 'error') }
   }
 
-  if (error && !lead) return <div className="rounded-lg bg-rose-50 p-4 text-sm text-rose-700">{error}</div>
+  if (error && !lead) return <div className="animate-fade rounded-lg bg-rose-50 p-4 text-sm text-rose-700">{error}</div>
   if (!lead) return <div className="text-sm text-slate-400">Loading…</div>
   const fmt = (s) => new Date(s).toLocaleString()
 
@@ -76,7 +78,7 @@ export default function LeadDetail() {
     <div>
       <Link to="/leads" className="text-sm text-slate-500 hover:text-navy-700">← Back to leads</Link>
 
-      <div className="mt-3 flex flex-wrap items-start justify-between gap-3">
+      <div className="animate-rise mt-3 flex flex-wrap items-start justify-between gap-3">
         <div>
           <h1 className="font-display text-2xl font-semibold text-ink">{lead.name}</h1>
           <div className="mt-1 flex flex-wrap items-center gap-2 text-sm text-slate-500">
@@ -86,15 +88,15 @@ export default function LeadDetail() {
           </div>
         </div>
         {isManager && (
-          <button onClick={remove} className="rounded-lg border border-rose-200 px-3 py-2 text-sm font-medium text-rose-600 hover:bg-rose-50">Delete</button>
+          <button onClick={remove} className="rounded-lg border border-rose-200 px-3 py-2 text-sm font-medium text-rose-600 transition hover:bg-rose-50">Delete</button>
         )}
       </div>
 
       {error && <div className="mt-4 rounded-lg bg-rose-50 px-3 py-2 text-sm text-rose-700">{error}</div>}
 
-      <div className="mt-5 grid gap-3 sm:grid-cols-2">
+      <div className="animate-rise mt-5 grid gap-3 sm:grid-cols-2" style={{ animationDelay: '60ms' }}>
         {/* Status changer */}
-        <div className="rounded-xl border border-slate-200 bg-white p-4">
+        <div className="card-hover rounded-xl border border-slate-200 bg-white p-4">
           <div className="text-xs font-medium uppercase tracking-wide text-slate-500">Move stage</div>
           <div className="mt-2.5 flex flex-wrap gap-2">
             {STATUSES.map((s) => {
@@ -112,7 +114,7 @@ export default function LeadDetail() {
         </div>
 
         {/* Assignment */}
-        <div className="rounded-xl border border-slate-200 bg-white p-4">
+        <div className="card-hover rounded-xl border border-slate-200 bg-white p-4">
           <div className="text-xs font-medium uppercase tracking-wide text-slate-500">Assigned agent</div>
           {isManager ? (
             <select value={lead.assigned_to_id || ''} onChange={changeAssignee}
@@ -126,9 +128,9 @@ export default function LeadDetail() {
         </div>
       </div>
 
-      <div className="mt-3 grid gap-3 lg:grid-cols-2">
+      <div className="animate-rise mt-3 grid gap-3 lg:grid-cols-2" style={{ animationDelay: '120ms' }}>
         {/* Requirement */}
-        <div className="rounded-xl border border-slate-200 bg-white p-4">
+        <div className="card-hover rounded-xl border border-slate-200 bg-white p-4">
           <h2 className="font-display text-base font-semibold text-ink">Requirement</h2>
           <div className="mt-3 grid grid-cols-2 gap-4">
             <Field label="Property type">{propertyLabel(lead.property_type)}</Field>
@@ -145,12 +147,12 @@ export default function LeadDetail() {
         {/* Map */}
         <div>
           <h2 className="mb-3 font-display text-base font-semibold text-ink">Preferred location</h2>
-          <LeadMap geo={lead.location_geo} />
+          <LeadMap geo={lead.location_geo} location={lead.preferred_location} />
         </div>
       </div>
 
       {/* Notes */}
-      <div className="mt-3 rounded-xl border border-slate-200 bg-white p-4">
+      <div className="animate-rise card-hover mt-3 rounded-xl border border-slate-200 bg-white p-4" style={{ animationDelay: '180ms' }}>
         <h2 className="font-display text-base font-semibold text-ink">Notes</h2>
         <form onSubmit={addNote} className="mt-3 flex gap-2">
           <input value={noteBody} onChange={(e) => setNoteBody(e.target.value)} placeholder="Add a note…"

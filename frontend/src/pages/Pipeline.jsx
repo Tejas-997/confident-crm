@@ -1,6 +1,8 @@
 import { useEffect, useState, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { api } from '../api.js'
+import { log } from '../logger.js'
+import { toast } from '../toast.js'
 import { BOARD, metaFor, propertyLabel, budgetLabel } from '../status.js'
 
 export default function Pipeline() {
@@ -9,13 +11,14 @@ export default function Pipeline() {
   const [loading, setLoading] = useState(true)
   const [dragId, setDragId] = useState(null)
   const [overCol, setOverCol] = useState(null)
-  const [error, setError] = useState('')
 
   const load = useCallback(async () => {
     setLoading(true)
     try {
       const data = await api.leads({ page: 1, page_size: 100 })
-      setLeads(data.results)
+      setLeads(data.results); log.success('Pipeline loaded', data.results.length)
+    } catch (e) {
+      log.error('Pipeline load failed', e); toast(e.message, 'error')
     } finally { setLoading(false) }
   }, [])
 
@@ -33,26 +36,27 @@ export default function Pipeline() {
     setLeads((ls) => ls.map((l) => (l.id === id ? { ...l, status } : l)))
     try {
       await api.setStatus(id, status)
+      log.success('Lead moved', { id, status })
+      toast(`Moved to ${metaFor(status).label}`)
     } catch (e) {
-      setError(e.message)
+      log.error('Move failed', e); toast(e.message, 'error')
       setLeads((ls) => ls.map((l) => (l.id === id ? { ...l, status: prev } : l)))
     }
   }
 
   return (
     <div>
-      <div className="flex items-end justify-between">
+      <div className="animate-rise flex items-end justify-between">
         <div>
           <h1 className="font-display text-2xl font-semibold text-ink">Pipeline board</h1>
           <p className="mt-1 text-sm text-slate-500">Drag a lead between stages to update its status.</p>
         </div>
       </div>
 
-      {error && <div className="mt-4 rounded-lg bg-rose-50 px-3 py-2 text-sm text-rose-700">{error}</div>}
       {loading && <div className="mt-6 text-sm text-slate-400">Loading board…</div>}
 
       <div className="mt-5 flex gap-4 overflow-x-auto pb-4">
-        {BOARD.map((status) => {
+        {BOARD.map((status, i) => {
           const m = metaFor(status)
           const items = leads.filter((l) => l.status === status)
           const isOver = overCol === status
@@ -62,7 +66,8 @@ export default function Pipeline() {
               onDragOver={(e) => { e.preventDefault(); setOverCol(status) }}
               onDragLeave={() => setOverCol((c) => (c === status ? null : c))}
               onDrop={() => onDrop(status)}
-              className={`flex w-72 shrink-0 flex-col rounded-xl border-t-4 ${m.colTop} bg-slate-50/70 transition-colors ${
+              style={{ animationDelay: `${i * 60}ms` }}
+              className={`animate-rise flex w-72 shrink-0 flex-col rounded-xl border-t-4 ${m.colTop} bg-slate-50/70 transition-colors ${
                 isOver ? 'bg-navy-900/5 ring-2 ring-navy-700/20' : ''
               }`}
             >
@@ -84,8 +89,8 @@ export default function Pipeline() {
                     onDragStart={() => setDragId(lead.id)}
                     onDragEnd={() => { setDragId(null); setOverCol(null) }}
                     onClick={() => navigate(`/leads/${lead.id}`)}
-                    className={`cursor-grab rounded-lg border border-slate-200 bg-white p-3 shadow-sm transition active:cursor-grabbing ${
-                      dragId === lead.id ? 'opacity-50' : 'hover:border-slate-300'
+                    className={`cursor-grab rounded-lg border border-slate-200 bg-white p-3 shadow-sm transition hover:shadow-md active:cursor-grabbing ${
+                      dragId === lead.id ? 'scale-[.98] opacity-50' : 'hover:border-slate-300'
                     }`}
                   >
                     <div className="text-sm font-medium text-ink">{lead.name}</div>

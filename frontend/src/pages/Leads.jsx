@@ -2,6 +2,8 @@ import { useEffect, useState, useCallback } from 'react'
 import { Link } from 'react-router-dom'
 import { api } from '../api.js'
 import { useAuth } from '../auth.jsx'
+import { log } from '../logger.js'
+import { toast } from '../toast.js'
 import { STATUSES, PROPERTY_TYPES, metaFor, propertyLabel, budgetLabel } from '../status.js'
 import StatusBadge from '../components/StatusBadge.jsx'
 
@@ -28,13 +30,16 @@ function NewLeadModal({ onClose, onCreated, isManager, users }) {
       payload.assigned_to = isManager && payload.assigned_to ? Number(payload.assigned_to) : null
       if (!isManager) delete payload.assigned_to
       const lead = await api.createLead(payload)
+      log.success('Lead created', lead)
       onCreated(lead)
-    } catch (err) { setError(err.message) } finally { setBusy(false) }
+    } catch (err) {
+      setError(err.message); log.error('Create lead failed', err); toast(err.message, 'error')
+    } finally { setBusy(false) }
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-ink/40 p-4" onClick={onClose}>
-      <div className="max-h-[90vh] w-full max-w-lg overflow-y-auto rounded-xl bg-white p-6 shadow-xl" onClick={(e) => e.stopPropagation()}>
+    <div className="animate-fade fixed inset-0 z-50 flex items-center justify-center bg-ink/40 p-4" onClick={onClose}>
+      <div className="animate-rise max-h-[90vh] w-full max-w-lg overflow-y-auto rounded-xl bg-white p-6 shadow-xl" onClick={(e) => e.stopPropagation()}>
         <h2 className="font-display text-lg font-semibold text-ink">New lead</h2>
         <p className="mt-0.5 text-sm text-slate-500">We'll map the preferred location automatically.</p>
         <form onSubmit={submit} className="mt-5 space-y-3">
@@ -112,6 +117,8 @@ export default function Leads() {
     setLoading(true)
     try {
       setData(await api.leads({ q, status, property_type: propertyType, page, page_size: PAGE_SIZE }))
+    } catch (e) {
+      log.error('Load leads failed', e); toast(e.message, 'error')
     } finally { setLoading(false) }
   }, [q, status, propertyType, page])
 
@@ -124,15 +131,15 @@ export default function Leads() {
 
   return (
     <div>
-      <div className="flex items-end justify-between">
+      <div className="animate-rise flex items-end justify-between">
         <div>
           <h1 className="font-display text-2xl font-semibold text-ink">Leads</h1>
           <p className="mt-1 text-sm text-slate-500">{data ? `${data.count} total` : 'Loading…'}</p>
         </div>
-        <button onClick={() => setShowModal(true)} className="rounded-lg bg-navy-900 px-3.5 py-2 text-sm font-semibold text-white hover:bg-navy-800">+ New lead</button>
+        <button onClick={() => setShowModal(true)} className="rounded-lg bg-navy-900 px-3.5 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-navy-800 hover:shadow">+ New lead</button>
       </div>
 
-      <div className="mt-5 flex flex-col gap-3 sm:flex-row">
+      <div className="animate-rise mt-5 flex flex-col gap-3 sm:flex-row" style={{ animationDelay: '60ms' }}>
         <input value={q} onChange={(e) => { setPage(1); setQ(e.target.value) }} placeholder="Search name, phone, email, location…"
           className="flex-1 rounded-lg border border-slate-300 bg-white px-3.5 py-2 text-sm outline-none focus:border-navy-700 focus:ring-2 focus:ring-navy-700/10" />
         <select value={propertyType} onChange={(e) => { setPage(1); setPropertyType(e.target.value) }}
@@ -147,7 +154,7 @@ export default function Leads() {
         </select>
       </div>
 
-      <div className="mt-4 overflow-x-auto rounded-xl border border-slate-200 bg-white">
+      <div className="animate-rise mt-4 overflow-x-auto rounded-xl border border-slate-200 bg-white" style={{ animationDelay: '120ms' }}>
         <table className="w-full text-sm">
           <thead>
             <tr className="border-b border-slate-100 text-left text-xs uppercase tracking-wide text-slate-500">
@@ -167,7 +174,7 @@ export default function Leads() {
               <tr><td colSpan={6} className="px-5 py-10 text-center text-slate-400">No leads match. Try a different filter or add a new lead.</td></tr>
             )}
             {data?.results.map((lead) => (
-              <tr key={lead.id} className="hover:bg-slate-50">
+              <tr key={lead.id} className="transition-colors hover:bg-slate-50">
                 <td className="px-5 py-3"><Link to={`/leads/${lead.id}`} className="font-medium text-ink hover:text-navy-700">{lead.name}</Link></td>
                 <td className="hidden px-5 py-3 text-slate-600 sm:table-cell">
                   {propertyLabel(lead.property_type)}{lead.configuration ? ` · ${lead.configuration}` : ''}
@@ -195,7 +202,7 @@ export default function Leads() {
       {showModal && (
         <NewLeadModal isManager={isManager} users={users}
           onClose={() => setShowModal(false)}
-          onCreated={() => { setShowModal(false); setPage(1); setQ(''); setStatus(''); setPropertyType(''); load() }} />
+          onCreated={() => { setShowModal(false); toast('Lead created successfully'); setPage(1); setQ(''); setStatus(''); setPropertyType(''); load() }} />
       )}
     </div>
   )
