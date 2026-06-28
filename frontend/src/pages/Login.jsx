@@ -104,22 +104,7 @@ export default function Login() {
             </button>
           </form>
 
-          <div className="mt-6 rounded-lg border border-slate-200 bg-white p-3 text-xs text-slate-500">
-            <div className="grid grid-cols-1 gap-1">
-              <button type="button" onClick={() => { setUsername('rohit.manager'); setPassword('manager123') }}
-                className="text-left hover:text-navy-700">
-                <span className="font-medium text-slate-600">rohit.manager</span> / manager123 — Sales Manager (sees all)
-              </button>
-              <button type="button" onClick={() => { setUsername('aisha.agent'); setPassword('agent123') }}
-                className="text-left hover:text-navy-700">
-                <span className="font-medium text-slate-600">aisha.agent</span> / agent123 — Sales Agent (own leads)
-              </button>
-              <button type="button" onClick={() => { setUsername('admin'); setPassword('admin12345') }}
-                className="text-left hover:text-navy-700">
-                <span className="font-medium text-slate-600">admin</span> / admin12345 — Admin
-              </button>
-            </div>
-          </div>
+         
         </div>
       </div>
     </div>
